@@ -1,0 +1,19 @@
+{
+  "name": "soft-landing",
+  "version": "1.0.0",
+  "description": "Soft Landing \u2014 an agent that translates your taste to a new city using Qloo's Taste AI.",
+  "license": "MIT",
+  "type": "module",
+  "main": "server.js",
+  "engines": {
+    "node": ">=22.19.0"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "dev:mock": "QLOO_MOCK=1 node server.js",
+    "test": "QLOO_MOCK=1 node --test test/*.test.js"
+  },
+  "dependencies": {
+    "@qloo/qloo-harness": "^0.1.26"
+  }
+}

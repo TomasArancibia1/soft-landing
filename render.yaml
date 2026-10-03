@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: soft-landing
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: 22.22.0
+      - key: NODE_ENV
+        value: production
+      - key: QLOO_API_KEY
+        sync: false
