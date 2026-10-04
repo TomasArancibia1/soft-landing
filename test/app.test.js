@@ -71,3 +71,15 @@ test('plan is built only from provided results', () => {
   const titles = plan.weeks.flatMap((w) => w.items.map((i) => i.title));
   assert.deepEqual([...titles].sort(), ['Art', 'Kreuzberg', 'P1', 'P2', 'P3']);
 });
+
+test('ics export is valid and folds long lines', async () => {
+  const { toIcs, buildPlan } = await import('../public/plan.js');
+  const plan = buildPlan({ anchors: [{ name: 'A' }], city: 'Berlin', tags: [{ name: 'Indie' }], places: [{ name: 'Café, "Uno"; Dos', address: 'x'.repeat(200) }, { name: 'B' }, { name: 'C' }], barrios: [{ name: 'Kreuzberg' }], culture: {} });
+  const ics = toIcs(plan, { start: new Date('2026-10-05T10:00:00Z'), now: new Date('2026-10-04T00:00:00Z'), cityLabel: 'Berlin' });
+  assert.match(ics, /^BEGIN:VCALENDAR\r\n/);
+  assert.match(ics, /DTSTART;VALUE=DATE:20261005/);
+  assert.match(ics, /DTSTART;VALUE=DATE:20261026/);
+  assert.match(ics, /Caf[^\r\n]*Uno/);
+  for (const l of ics.split('\r\n')) assert.ok(l.length <= 75, `line too long: ${l.length}`);
+  assert.match(ics, /END:VCALENDAR\r\n$/);
+});
