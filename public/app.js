@@ -1,4 +1,4 @@
-import { buildPlan } from './plan.js';
+import { buildPlan, toIcs } from './plan.js';
 
 /* ---------------------------------------------------------------- i18n ---- */
 const DICT = {
@@ -32,7 +32,13 @@ const DICT = {
     weeks: ['Orient yourself', 'Find your sound', 'Screen & pages', 'Meet people'],
     kinds: { barrio: 'Barrio', place: 'Place', artist: 'Listen', podcast: 'Listen', movie: 'Watch', tv_show: 'Watch', book: 'Read', meet: 'Meet', screen: 'Watch' },
     youAndThem: 'You & them', theirTaste: 'Their taste', noOverlap: 'No clear overlap yet — add more of their favorites.',
-    qloo: 'Qloo', cached: 'cached'
+    qloo: 'Qloo', cached: 'cached',
+    personas: 'Or start from a persona', p1: 'Slow-morning indie', p2: 'Night owl & neon', p3: 'Foodie & festivals',
+    warming: 'Waking the server up (free hosting) — the first visit can take up to a minute…',
+    agent: 'The agent is working', a_dna: 'Reading your taste', a_places: 'Choosing places', a_barrio: 'Finding your barrio', a_culture: 'Listening to the city', a_plan: 'Writing your plan',
+    calls: (n) => `${n} Qloo call${n === 1 ? '' : 's'}`, openMap: 'Open in maps', filterOn: (t) => `Filtering by “${t}”`, clear: 'Clear',
+    ics: 'Add to calendar (.ics)', print: 'Print / save as PDF', tagHint: 'Tip: tap a concept to filter your places.',
+    noMatches: 'No places carry that concept — clear the filter.'
   },
   es: {
     eyebrow: 'Para quien empieza de nuevo en otra ciudad',
@@ -64,7 +70,13 @@ const DICT = {
     weeks: ['Ubícate', 'Encuentra tu sonido', 'Pantalla y páginas', 'Conoce gente'],
     kinds: { barrio: 'Barrio', place: 'Lugar', artist: 'Escucha', podcast: 'Escucha', movie: 'Mira', tv_show: 'Mira', book: 'Lee', meet: 'Encuentro', screen: 'Mira' },
     youAndThem: 'Tú y esa persona', theirTaste: 'Sus gustos', noOverlap: 'Aún no hay coincidencias claras — agrega más favoritos suyos.',
-    qloo: 'Qloo', cached: 'en caché'
+    qloo: 'Qloo', cached: 'en caché',
+    personas: 'O parte desde un perfil', p1: 'Indie de mañanas lentas', p2: 'Noctámbulo y neón', p3: 'Foodie y festivales',
+    warming: 'Despertando el servidor (hosting gratuito) — la primera visita puede tardar hasta un minuto…',
+    agent: 'El agente está trabajando', a_dna: 'Leyendo tu gusto', a_places: 'Eligiendo lugares', a_barrio: 'Buscando tu barrio', a_culture: 'Escuchando la ciudad', a_plan: 'Escribiendo tu plan',
+    calls: (n) => `${n} llamada${n === 1 ? '' : 's'} a Qloo`, openMap: 'Abrir en mapas', filterOn: (t) => `Filtrando por “${t}”`, clear: 'Quitar',
+    ics: 'Agregar al calendario (.ics)', print: 'Imprimir / guardar PDF', tagHint: 'Tip: toca un concepto para filtrar tus lugares.',
+    noMatches: 'Ningún lugar tiene ese concepto — quita el filtro.'
   }
 };
 
@@ -130,7 +142,7 @@ function applyLang() {
 }
 
 /* --------------------------------------------------------------- state ---- */
-const state = { anchors: [], other: [], city: '', trace: [], data: {}, kind: 'artist', map: null, layer: null };
+const state = { anchors: [], other: [], city: '', trace: [], data: {}, kind: 'artist', map: null, layer: null, steps: {}, tag: null, t0: 0 };
 const MAX_ANCHORS = 8;
 
 const CITIES = ['Barcelona', 'Berlin', 'Lisbon', 'Madrid', 'Mexico City', 'Buenos Aires', 'Santiago', 'Bogotá', 'Lima', 'São Paulo', 'New York', 'Los Angeles', 'Toronto', 'London', 'Amsterdam', 'Paris', 'Milan', 'Rome', 'Copenhagen', 'Stockholm', 'Vienna', 'Prague', 'Warsaw', 'Istanbul', 'Dubai', 'Singapore', 'Tokyo', 'Seoul', 'Sydney', 'Melbourne', 'Medellín', 'Montevideo', 'Panama City', 'Miami', 'Chicago', 'Austin', 'Vancouver', 'Dublin', 'Edinburgh', 'Cape Town'];
@@ -231,24 +243,32 @@ autocomplete({
 });
 $('#city').addEventListener('input', refreshIntake);
 
-/* ------------------------------------------------------------- examples --- */
-const EXAMPLES = [['Bon Iver', 'artist'], ['Aesop', 'brand'], ['Amélie', 'movie'], ['Fleabag', 'tv_show'], ['Radio Ambulante', 'podcast'], ['Blue Bottle Coffee', 'brand']];
-$('#example').addEventListener('click', async (ev) => {
-  ev.target.disabled = true;
+/* ------------------------------------------------------------- personas --- */
+const PERSONAS = [
+  { key: 'p1', city: 'Berlin', items: [['Bon Iver', 'artist'], ['Aesop', 'brand'], ['Amélie', 'movie'], ['Fleabag', 'tv_show'], ['Radio Ambulante', 'podcast'], ['Blue Bottle Coffee', 'brand']] },
+  { key: 'p2', city: 'Tokyo', items: [['Tame Impala', 'artist'], ['Daft Punk', 'artist'], ['Blade Runner 2049', 'movie'], ['Stranger Things', 'tv_show'], ['Norwegian Wood', 'book'], ['Nike', 'brand']] },
+  { key: 'p3', city: 'Lisbon', items: [['Bad Bunny', 'artist'], ["Chef's Table", 'tv_show'], ['Parts Unknown', 'tv_show'], ['Noma', 'place'], ['Coachella', 'brand']] }
+];
+function renderPersonas() {
+  const box = $('#personas');
+  box.replaceChildren(...PERSONAS.map((p) => h('button', { type: 'button', class: 'chip-btn persona', onclick: (ev) => usePersona(p, ev.currentTarget) }, t(p.key), h('span', { class: 'to' }, ` → ${p.city}`))));
+}
+async function usePersona(p, btn) {
+  $$('.persona').forEach((b) => (b.disabled = true));
+  btn.classList.add('busy');
   try {
-    const found = await Promise.all(EXAMPLES.map(async ([q, type]) => {
-      try {
-        const d = await api(`/api/search?q=${encodeURIComponent(q)}&type=${type}`);
-        return d.items?.[0];
-      } catch { return null; }
+    const found = await Promise.all(p.items.map(async ([q, type]) => {
+      try { const d = await api(`/api/search?q=${encodeURIComponent(q)}&type=${type}`); return d.items?.[0]; } catch { return null; }
     }));
+    state.anchors = [];
     for (const it of found.filter(Boolean)) {
       if (!state.anchors.some((a) => a.id === it.id) && state.anchors.length < MAX_ANCHORS) state.anchors.push({ id: it.id, name: it.name, type: it.type, image: it.image });
     }
-    if (!$('#city').value) $('#city').value = 'Berlin';
+    $('#city').value = p.city;
     refreshIntake();
-  } finally { ev.target.disabled = false; }
-});
+    if (state.anchors.length < 2) { const e = $('#intake-error'); e.textContent = t('error'); e.hidden = false; }
+  } finally { $$('.persona').forEach((b) => (b.disabled = false)); btn.classList.remove('busy'); }
+}
 
 /* ------------------------------------------------------------- tracing ---- */
 function record(traces, lane) {
@@ -278,23 +298,45 @@ function summarize(input) {
 function skeleton(container, n = 6) {
   container.replaceChildren(...Array.from({ length: n }, () => h('div', { class: 'skel' })));
 }
+const STEP_KEYS = ['dna', 'places', 'barrio', 'culture', 'plan'];
+function setStep(key, status) {
+  if (!STEP_KEYS.includes(key)) return;
+  if (state.steps[key] === 'done' && status !== 'done') return;
+  state.steps[key] = status;
+  renderAgent();
+}
+function renderAgent() {
+  const box = $('#agent');
+  if (!box) return;
+  const done = STEP_KEYS.every((k) => state.steps[k] === 'done');
+  const secs = state.t0 ? ((performance.now() - state.t0) / 1000).toFixed(1) : '0.0';
+  box.classList.toggle('finished', done);
+  box.replaceChildren(
+    h('div', { class: 'agent-title' }, done ? `✓ ${t('calls', state.trace.length)} · ${secs}s` : t('agent')),
+    h('ol', {}, STEP_KEYS.map((k) => h('li', { class: state.steps[k] || 'idle' }, h('i', { 'aria-hidden': 'true' }), t(`a_${k}`)))));
+}
+
 async function lane(name, body, container, render, { cols } = {}) {
   if (cols !== false) skeleton(container, cols || 4);
+  setStep(name, 'run');
   try {
     const data = await api(`/api/lane/${name}`, { anchors: state.anchors.map(({ id, name: n, type }) => ({ id, name: n, type })), city: state.city, ...body });
     record(data.trace, name);
     state.data[name + (body?.kind ? `:${body.kind}` : '')] = data;
     render(data);
+    setStep(name, 'done');
     schedulePlan();
     return data;
   } catch (e) {
+    setStep(name, 'err');
     container.replaceChildren(h('div', { class: 'lane-error' }, h('span', {}, e.message), h('button', { class: 'chip-btn', type: 'button', onclick: () => lane(name, body, container, render, { cols }) }, t('retry'))));
     return null;
   }
 }
 
 /* ------------------------------------------------------------ renderers --- */
-function card(item, { showWhy = true } = {}) {
+const mapsUrl = (item) => `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([item.name, item.address, state.city].filter(Boolean).join(' '))}`;
+function card(item, { showWhy = true, maps = false } = {}) {
   const img = safeImg(item.image);
   const m = pct(item.affinity);
   return h('article', { class: 'item' },
@@ -303,21 +345,41 @@ function card(item, { showWhy = true } = {}) {
       h('div', { class: 'item-name' }, item.name),
       (item.address || item.description) && h('div', { class: 'item-sub' }, item.address || item.description),
       m != null && h('div', { class: 'meter-row' }, h('div', { class: 'meter', style: `--m:${m / 100}` }, h('i')), `${m}% ${t('affinity')}`),
-      showWhy && item.why?.length ? h('div', { class: 'because' }, `${t('because')} `, h('b', {}, item.why.slice(0, 2).join(' · '))) : null));
+      showWhy && item.why?.length ? h('div', { class: 'because' }, `${t('because')} `, h('b', {}, item.why.slice(0, 2).join(' · '))) : null,
+      maps ? h('a', { class: 'maplink', href: mapsUrl(item), target: '_blank', rel: 'noopener noreferrer' }, `${t('openMap')} ↗`) : null));
 }
 function grid(container, items, opts) {
   if (!items?.length) return container.replaceChildren(h('div', { class: 'empty' }, t('empty')));
   container.replaceChildren(...items.map((it, i) => { const c = card(it, opts); c.style.animationDelay = `${i * 40}ms`; return c; }));
 }
 
+function renderPlaces() {
+  if (state.data.dna?.tags) renderDna(state.data.dna);
+  const items = state.data.places?.items || [];
+  const box = $('#places');
+  const bar = $('#places-filter');
+  if (!state.tag) { bar.hidden = true; return grid(box, items, { maps: true }); }
+  const tag = state.tag.toLowerCase();
+  const kept = items.filter((it) => (it.why || []).some((w) => String(w).toLowerCase() === tag));
+  bar.hidden = false;
+  bar.replaceChildren(h('span', {}, t('filterOn', state.tag)), h('button', { type: 'button', class: 'chip-btn', onclick: () => { state.tag = null; renderPlaces(); } }, t('clear')));
+  if (!kept.length) return box.replaceChildren(h('div', { class: 'empty' }, t('noMatches')));
+  grid(box, kept, { maps: true });
+}
+
+const placeTagSet = () => new Set((state.data.places?.items || []).flatMap((it) => (it.why || []).map((w) => String(w).toLowerCase())));
 function renderDna({ tags }) {
   const box = $('#dna');
   if (!tags?.length) return box.replaceChildren(h('div', { class: 'empty' }, t('empty')));
   const max = Math.max(...tags.map((x) => x.affinity ?? 0), 0.0001);
+  const linked = placeTagSet();
+  const anyLinked = tags.some((tg) => linked.has(String(tg.name).toLowerCase()));
+  const tip = $('.tip'); if (tip) tip.hidden = !anyLinked;
   box.replaceChildren(...tags.map((tg, i) => {
     const s = tg.affinity != null ? Math.max(0.15, Math.min(1, tg.affinity / max)) : Math.max(0.2, 1 - i * 0.07);
-    const el = h('span', { class: 'tag', style: `--s:${s.toFixed(2)};animation-delay:${i * 35}ms` }, tg.name);
-    return el;
+    const style = `--s:${s.toFixed(2)};animation-delay:${i * 35}ms`;
+    if (!linked.has(String(tg.name).toLowerCase())) return h('span', { class: 'tag', style }, tg.name);
+    return h('button', { type: 'button', class: `tag linked${state.tag === tg.name ? ' on' : ''}`, 'aria-pressed': String(state.tag === tg.name), style, title: t('tagHint'), onclick: () => { state.tag = state.tag === tg.name ? null : tg.name; renderDna({ tags }); renderPlaces(); if (state.tag) $('#sec-places').scrollIntoView({ behavior: 'smooth' }); } }, tg.name);
   }));
 }
 
@@ -328,11 +390,30 @@ function ensureMap() {
   state.layer = window.L.layerGroup().addTo(state.map);
   return state.map;
 }
+// If the map library or its tiles can't load, still show where the heat is.
+function drawFallbackMap(points) {
+  const el = $('#map');
+  const NS = 'http://www.w3.org/2000/svg';
+  const lats = points.map((p) => p.lat), lons = points.map((p) => p.lon);
+  const [minLat, maxLat, minLon, maxLon] = [Math.min(...lats), Math.max(...lats), Math.min(...lons), Math.max(...lons)];
+  const sx = (lon) => 30 + ((lon - minLon) / (maxLon - minLon || 1)) * 540;
+  const sy = (lat) => 270 - ((lat - minLat) / (maxLat - minLat || 1)) * 240;
+  const svg = document.createElementNS(NS, 'svg');
+  svg.setAttribute('viewBox', '0 0 600 300'); svg.setAttribute('width', '100%'); svg.setAttribute('height', '100%'); svg.setAttribute('preserveAspectRatio', 'xMidYMid slice');
+  for (const p of points) {
+    const c = document.createElementNS(NS, 'circle');
+    c.setAttribute('cx', sx(p.lon)); c.setAttribute('cy', sy(p.lat)); c.setAttribute('r', 8 + p.strength * 26);
+    c.setAttribute('fill', '#6c4cf5'); c.setAttribute('fill-opacity', 0.15 + p.strength * 0.45);
+    svg.append(c);
+  }
+  el.replaceChildren(svg);
+}
 function renderBarrio(data) {
   $('#p-barrio').textContent = t('pBarrio', data.anchorsUsed.join(', '));
   const map = ensureMap();
   const box = $('#barrios');
   if (!data.points?.length) { box.replaceChildren(h('div', { class: 'empty' }, t('empty'))); return; }
+  if (!map) drawFallbackMap(data.points);
   if (map) {
     state.layer.clearLayers();
     const bounds = [];
@@ -372,7 +453,7 @@ function renderMeet(data) {
     nodes.push(h('div', {}, h('div', { class: 'sub-title' }, t('youAndThem')), box));
   }
   const box2 = h('div', { class: 'grid' });
-  grid(box2, together);
+  grid(box2, together, { maps: true });
   nodes.push(h('div', {}, h('div', { class: 'sub-title' }, t('together')), box2));
   out.replaceChildren(...nodes);
 }
@@ -386,6 +467,8 @@ function renderPlan() {
   const plan = buildPlan({ anchors: state.anchors, city: state.city, tags: d.dna?.tags, places: d.places?.items, barrios: d.barrio?.barrios, culture, match: d.match });
   const box = $('#plan');
   if (!plan.weeks.length) return box.replaceChildren(h('div', { class: 'skel' }));
+  state.plan = plan;
+  setStep('plan', 'done');
   box.replaceChildren(...plan.weeks.map((w) => h('div', { class: 'week' },
     h('h4', {}, `Week ${w.week}`),
     h('div', { class: 'wt' }, DICT[lang].weeks[w.week - 1]),
@@ -402,6 +485,10 @@ async function land() {
   state.trace = [];
   state.data = {};
   state.kind = 'artist';
+  state.steps = {};
+  state.tag = null;
+  state.t0 = performance.now();
+  renderAgent();
   $('#intake').hidden = true;
   $('#out').hidden = false;
   window.scrollTo({ top: 0 });
@@ -416,7 +503,7 @@ async function land() {
   // Core lanes in parallel; the server queues them against the shared quota.
   await Promise.all([
     lane('dna', {}, $('#dna'), renderDna, { cols: 1 }),
-    lane('places', {}, $('#places'), (d) => grid($('#places'), d.items), { cols: 6 }),
+    lane('places', {}, $('#places'), renderPlaces, { cols: 6 }),
     lane('barrio', {}, $('#barrios'), renderBarrio, { cols: 3 })
   ]);
   await loadCulture('artist');
@@ -454,10 +541,20 @@ $('#match').addEventListener('click', async (ev) => {
   await lane('match', { other: state.other.map(({ id, name, type }) => ({ id, name, type })) }, box, renderMeet, { cols: false });
   ev.target.disabled = false;
 });
+$('#ics').addEventListener('click', () => {
+  if (!state.plan?.weeks?.length) return;
+  const blob = new Blob([toIcs(state.plan, { cityLabel: state.city, weekNames: DICT[lang].weeks })], { type: 'text/calendar;charset=utf-8' });
+  const a = h('a', { href: URL.createObjectURL(blob), download: `soft-landing-${state.city.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.ics` });
+  document.body.append(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+});
+$('#print').addEventListener('click', () => window.print());
 $('#lang').addEventListener('click', () => {
   lang = lang === 'en' ? 'es' : 'en';
   try { localStorage.setItem('sl.lang', lang); } catch { /* ignore */ }
   applyLang();
+  renderPersonas();
+  renderAgent();
   if (!$('#out').hidden) { $('#out-eyebrow').textContent = t('eyebrowOut'); $('#out-title').textContent = `${t('landingIn')} ${state.city}`; renderKinds(); renderPlan(); }
 });
 
@@ -470,6 +567,13 @@ $$('#out .block').forEach((s) => io.observe(s));
 
 /* ------------------------------------------------------------- boot ------ */
 applyLang();
+renderPersonas();
+// Free hosting sleeps when idle: wake it up on arrival and say so if it takes a while.
+(() => {
+  const banner = $('#warm');
+  const timer = setTimeout(() => { banner.textContent = t('warming'); banner.hidden = false; }, 2500);
+  fetch('/api/health').catch(() => {}).finally(() => { clearTimeout(timer); banner.hidden = true; });
+})();
 const shared = location.hash.length > 1 ? decodeState(location.hash.slice(1)) : null;
 if (shared) {
   state.anchors = shared.anchors;

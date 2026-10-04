@@ -6,6 +6,14 @@
   <title>Soft Landing — your taste, translated to a new city</title>
   <meta name="description" content="Moving to a new city? Soft Landing uses Qloo's Taste AI to translate what you love into places, barrios, sounds and people in your new home.">
   <meta name="theme-color" content="#14102b">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Soft Landing — move cities, keep your taste">
+  <meta property="og:description" content="An agent that translates what you love into the barrio, places, culture and people of your new city. Powered by Qloo.">
+  <meta property="og:image" content="/og.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Soft Landing — move cities, keep your taste">
+  <meta name="twitter:description" content="Your taste, translated to a new city. Powered by Qloo.">
+  <meta name="twitter:image" content="/og.png">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%237c5cff'/%3E%3Cstop offset='1' stop-color='%2300c2ff'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='16' fill='url(%23g)'/%3E%3Cpath d='M14 40c8-2 14-8 18-18 4 10 10 16 18 18-8 2-14 8-18 14-4-6-10-12-18-14z' fill='white'/%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -26,6 +34,8 @@
       <button class="chip-btn" id="lang" type="button" aria-label="Switch language">ES</button>
     </div>
   </header>
+
+  <div id="warm" class="warm" role="status" hidden></div>
 
   <main id="main">
     <!-- ======================= INTAKE ======================= -->
@@ -60,7 +70,8 @@
 
           <ul id="passport" class="passport" aria-live="polite"></ul>
           <div class="examples">
-            <button type="button" class="link" id="example" data-i18n="example">No idea where to start? Try an example</button>
+            <p class="hint tight" data-i18n="personas">Or start from a persona</p>
+            <div id="personas" class="personas"></div>
           </div>
         </div>
 
@@ -88,6 +99,8 @@
         </div>
       </div>
 
+      <div id="agent" class="agent" aria-live="polite"></div>
+
       <nav class="tabs" aria-label="Sections">
         <a href="#sec-dna" data-i18n="n_dna">Taste DNA</a>
         <a href="#sec-barrio" data-i18n="n_barrio">Your barrio</a>
@@ -101,6 +114,7 @@
       <section id="sec-dna" class="block">
         <div class="block-head"><h3 data-i18n="h_dna">Your taste DNA</h3><p data-i18n="p_dna">The concepts Qloo finds running through everything you love.</p></div>
         <div id="dna" class="cloud"></div>
+        <p class="hint tip" data-i18n="tagHint">Tip: tap a concept to filter your places.</p>
       </section>
 
       <section id="sec-barrio" class="block">
@@ -110,6 +124,7 @@
 
       <section id="sec-places" class="block">
         <div class="block-head"><h3 data-i18n="h_places">Places that feel like you</h3><p data-i18n="p_places">Restaurants, bars and venues in your new city that match your taste.</p></div>
+        <div id="places-filter" class="filter-bar" hidden></div>
         <div id="places" class="grid"></div>
       </section>
 
@@ -137,6 +152,10 @@
       <section id="sec-plan" class="block">
         <div class="block-head"><h3 data-i18n="h_plan">Your first 30 days</h3><p data-i18n="p_plan">A gentle plan built only from Qloo results — each line shows why it was picked for you.</p></div>
         <div id="plan" class="plan"></div>
+        <div class="plan-actions">
+          <button class="chip-btn" id="ics" type="button" data-i18n="ics">Add to calendar (.ics)</button>
+          <button class="chip-btn" id="print" type="button" data-i18n="print">Print / save as PDF</button>
+        </div>
       </section>
 
       <section id="sec-trace" class="block">

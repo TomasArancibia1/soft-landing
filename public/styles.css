@@ -188,4 +188,50 @@ input[type=text]:focus, select:focus { outline: none; border-color: var(--brand)
   * { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
 }
 
+
+
+/* personas */
+.hint.tight { margin: 0 0 8px; }
+.personas { display: flex; flex-wrap: wrap; gap: 8px; }
+.persona { padding: 8px 14px; }
+.persona .to { color: var(--ink-2); font-weight: 400; }
+.persona.busy { opacity: .6; }
+.persona:disabled { cursor: progress; }
+
+/* wake-up banner */
+.warm { position: sticky; top: 0; z-index: 40; text-align: center; font-size: 14px; padding: 9px 16px; background: var(--ink); color: var(--bg); }
+
+/* agent steps */
+.agent { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; padding: 12px 16px; margin: 6px 0 4px; background: var(--card); border: 1px solid var(--line); border-radius: 14px; font-size: 13px; }
+.agent-title { font-weight: 600; color: var(--brand); }
+.agent.finished .agent-title { color: var(--ok); }
+.agent ol { display: flex; flex-wrap: wrap; gap: 6px 16px; list-style: none; margin: 0; padding: 0; color: var(--ink-2); }
+.agent li { display: inline-flex; align-items: center; gap: 7px; }
+.agent li i { width: 10px; height: 10px; border-radius: 50%; border: 2px solid var(--line); display: inline-block; }
+.agent li.run { color: var(--ink); }
+.agent li.run i { border-color: var(--brand); border-top-color: transparent; animation: spin .8s linear infinite; }
+.agent li.done { color: var(--ink); }
+.agent li.done i { background: var(--ok); border-color: var(--ok); }
+.agent li.err i { background: #c0392b; border-color: #c0392b; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* interactive DNA tags */
+button.tag { font-family: var(--sans); color: var(--ink); cursor: pointer; text-decoration: underline dotted; text-underline-offset: 4px; text-decoration-color: color-mix(in srgb, var(--brand) 60%, transparent); }
+button.tag:hover { border-color: var(--brand); }
+button.tag.on { background: var(--brand); color: #fff; border-color: var(--brand); }
+.hint.tip { margin: 10px 0 0; font-size: 13px; }
+.filter-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; font-size: 14px; color: var(--ink-2); }
+
+.maplink { font-size: 12px; font-weight: 600; text-decoration: none; margin-top: 2px; width: fit-content; }
+.maplink:hover { text-decoration: underline; }
+.plan-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+
 [hidden] { display: none !important; }
+
+@media print {
+  body { background: #fff; color: #000; }
+  .top, .tabs, .agent, .out-actions, .warm, #sec-dna, #sec-barrio, #sec-places, #sec-culture, #sec-meet, #sec-trace, .plan-actions, .foot, .toast, .hint.tip { display: none !important; }
+  .out-title { font-size: 30px; }
+  .week { break-inside: avoid; box-shadow: none; }
+  .plan { grid-template-columns: 1fr 1fr; }
+}

@@ -46,3 +46,38 @@ export function buildPlan({ anchors = [], city = '', tags = [], places = [], bar
 
   return { city, weeks };
 }
+
+// ---- calendar export (RFC 5545), pure so it can be tested ------------------
+const icsEscape = (s) => String(s ?? '').replace(/\\/g, '\\\\').replace(/\r?\n/g, '\\n').replace(/;/g, '\;').replace(/,/g, '\\,');
+const ymd = (d) => `${d.getUTCFullYear()}${String(d.getUTCMonth() + 1).padStart(2, '0')}${String(d.getUTCDate()).padStart(2, '0')}`;
+function fold(line) {
+  const out = [];
+  let rest = line;
+  while (rest.length > 74) { out.push(rest.slice(0, 74)); rest = ` ${rest.slice(74)}`; }
+  out.push(rest);
+  return out.join('\r\n');
+}
+
+export function toIcs(plan, { start = new Date(), now = new Date(), cityLabel = plan.city, weekNames = [] } = {}) {
+  const day0 = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), start.getUTCDate()));
+  const stamp = `${ymd(now)}T${String(now.getUTCHours()).padStart(2, '0')}${String(now.getUTCMinutes()).padStart(2, '0')}${String(now.getUTCSeconds()).padStart(2, '0')}Z`;
+  const lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Soft Landing//EN', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH'];
+  for (const w of plan.weeks) {
+    const from = new Date(day0.getTime() + (w.week - 1) * 7 * 86400000);
+    const to = new Date(from.getTime() + 7 * 86400000);
+    const body = w.items.map((it) => `• ${it.title}${it.why ? ` (because ${it.why.value})` : ''}`).join('\n');
+    lines.push(
+      'BEGIN:VEVENT',
+      `UID:softlanding-${ymd(day0)}-w${w.week}@soft-landing`,
+      `DTSTAMP:${stamp}`,
+      `DTSTART;VALUE=DATE:${ymd(from)}`,
+      `DTEND;VALUE=DATE:${ymd(to)}`,
+      fold(`SUMMARY:${icsEscape(`Soft Landing · ${cityLabel} · week ${w.week}${weekNames[w.week - 1] ? `: ${weekNames[w.week - 1]}` : ''}`)}`),
+      fold(`DESCRIPTION:${icsEscape(body)}`),
+      'TRANSP:TRANSPARENT',
+      'END:VEVENT'
+    );
+  }
+  lines.push('END:VCALENDAR');
+  return `${lines.join('\r\n')}\r\n`;
+}
