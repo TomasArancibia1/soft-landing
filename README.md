@@ -12,6 +12,16 @@ Soft Landing is an agent that translates what a person loves at home into a new 
 - **A 30-day plan** — four gentle weeks built *only* from Qloo results, every line showing why it was chosen.
 - **A visible trace** — every Qloo call the agent made, so nothing on the page is invented.
 
+And the details that make it usable:
+
+- Persona starters, so anyone can try it in one click.
+- A live "agent at work" strip that shows each step finishing, with the total number of Qloo calls and time.
+- Tap a taste concept to filter the places Qloo explained with it; every place opens in maps.
+- Export the 30-day plan to your calendar (`.ics`) or print it as a PDF.
+- English / Spanish, dark mode, keyboard and screen-reader friendly, reduced-motion aware, works on phones.
+- If the map library can't load, the barrio view falls back to an inline plot instead of going blank.
+- A wake-up notice for the first visit on free hosting, plus a `keepalive` GitHub Action that keeps the demo warm.
+
 Why it matters: more than 280 million people live outside their country of birth, and every year millions more change cities for study or work. The first weeks are lonely largely because the things that made a place feel like home — a particular kind of café, a scene, a neighborhood — are invisible in a new city. Taste is the shortest path to belonging, and Qloo is the only graph that can translate it across places and categories.
 
 ## How Qloo powers it
@@ -66,7 +76,7 @@ npm test
 
 ### Deploy (Render)
 
-`render.yaml` is included. Create a Web Service from the repository, set `QLOO_API_KEY` as a secret environment variable, and deploy. Optional variables: `QLOO_DAILY_BUDGET` (default 1500 calls/day), `RATE_LIMIT_PER_MIN` (default 40 per IP), `QLOO_MAX_CONCURRENT` (default 3).
+`render.yaml` is included. Create a Web Service from the repository, set `QLOO_API_KEY` as a secret environment variable, and deploy. Event keys work only against the hackathon API, which is the default (`QLOO_BASE_URL=https://hackathon.api.qloo.com`). Optional variables: `QLOO_DAILY_BUDGET` (default 1500 calls/day), `RATE_LIMIT_PER_MIN` (default 40 per IP), `QLOO_MAX_CONCURRENT` (default 3).
 
 ## Responsible use
 
