@@ -161,7 +161,7 @@ async function serveStatic(res, pathname) {
     const data = await readFile(full);
     return send(res, 200, data, {
       'Content-Type': MIME[extname(full)] || 'application/octet-stream',
-      'Cache-Control': extname(full) === '.html' ? 'no-cache' : 'public, max-age=3600'
+      'Cache-Control': ['.png', '.ico', '.svg'].includes(extname(full)) ? 'public, max-age=3600' : 'no-cache'
     });
   } catch {
     // SPA fallback
