@@ -235,3 +235,10 @@ button.tag.on { background: var(--brand); color: #fff; border-color: var(--brand
   .week { break-inside: avoid; box-shadow: none; }
   .plan { grid-template-columns: 1fr 1fr; }
 }
+
+/* comfortable touch targets */
+@media (pointer: coarse) {
+  .chip-btn { min-height: 40px; }
+  .maplink { display: inline-flex; align-items: center; min-height: 40px; }
+  .brand { min-height: 40px; display: inline-flex; align-items: center; }
+}

@@ -390,6 +390,7 @@ function ensureMap() {
   state.layer = window.L.layerGroup().addTo(state.map);
   return state.map;
 }
+const clamp01 = (n) => Math.min(1, Math.max(0, Number(n) || 0));
 // If the map library or its tiles can't load, still show where the heat is.
 function drawFallbackMap(points) {
   const el = $('#map');
@@ -402,8 +403,8 @@ function drawFallbackMap(points) {
   svg.setAttribute('viewBox', '0 0 600 300'); svg.setAttribute('width', '100%'); svg.setAttribute('height', '100%'); svg.setAttribute('preserveAspectRatio', 'xMidYMid slice');
   for (const p of points) {
     const c = document.createElementNS(NS, 'circle');
-    c.setAttribute('cx', sx(p.lon)); c.setAttribute('cy', sy(p.lat)); c.setAttribute('r', 8 + p.strength * 26);
-    c.setAttribute('fill', '#6c4cf5'); c.setAttribute('fill-opacity', 0.15 + p.strength * 0.45);
+    c.setAttribute('cx', sx(p.lon)); c.setAttribute('cy', sy(p.lat)); c.setAttribute('r', 8 + clamp01(p.strength) * 26);
+    c.setAttribute('fill', '#6c4cf5'); c.setAttribute('fill-opacity', 0.15 + clamp01(p.strength) * 0.45);
     svg.append(c);
   }
   el.replaceChildren(svg);
@@ -418,7 +419,7 @@ function renderBarrio(data) {
     state.layer.clearLayers();
     const bounds = [];
     for (const p of data.points) {
-      window.L.circleMarker([p.lat, p.lon], { radius: 6 + p.strength * 20, color: '#6c4cf5', weight: 0, fillColor: '#6c4cf5', fillOpacity: 0.12 + p.strength * 0.4 }).addTo(state.layer);
+      window.L.circleMarker([p.lat, p.lon], { radius: 6 + clamp01(p.strength) * 20, color: '#6c4cf5', weight: 0, fillColor: '#6c4cf5', fillOpacity: 0.12 + clamp01(p.strength) * 0.4 }).addTo(state.layer);
       bounds.push([p.lat, p.lon]);
     }
     setTimeout(() => { map.invalidateSize(); map.fitBounds(bounds, { padding: [30, 30], maxZoom: 14 }); }, 60);
@@ -426,7 +427,7 @@ function renderBarrio(data) {
   box.replaceChildren(...data.barrios.map((b, i) => h('div', { class: 'barrio', tabindex: '0', onclick: () => state.map?.flyTo([b.lat, b.lon], 14) },
     h('div', { class: 'rank' }, t('barrioN', i + 1)),
     h('h4', {}, b.name || t('unnamed')),
-    h('div', { class: 'meter-row' }, h('div', { class: 'meter', style: `--m:${b.strength}` }, h('i')), `${b.cells} ${t('cells')}`))));
+    h('div', { class: 'meter-row' }, h('div', { class: 'meter', style: `--m:${clamp01(b.strength)}` }, h('i')), `${b.cells} ${t('cells')}`))));
 }
 
 function renderKinds() {
