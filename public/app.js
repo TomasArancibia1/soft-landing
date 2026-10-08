@@ -39,7 +39,7 @@ const DICT = {
     calls: (n) => `${n} Qloo call${n === 1 ? '' : 's'}`, openMap: 'Open in maps', filterOn: (t) => `Filtering by “${t}”`, clear: 'Clear',
     ics: 'Add to calendar (.ics)', print: 'Print / save as PDF', tagHint: 'Tip: tap a concept to filter your places.',
     noMatches: 'No places carry that concept — clear the filter.',
-    h_brief: 'Your landing brief', viaYou: 'Because you love', both: 'Matches your favorites and your concepts',
+    h_brief: 'Your landing brief', viaYou: 'Because you love', both: 'Matches your favorites and your concepts', spotTag: 'Everyday spot',
     agentLog: 'Agent decisions', plannerPolicy: 'Built-in planner', plannerLlm: (m) => `Language-model planner · ${m}`,
     stepsN: (n) => `${n} step${n === 1 ? '' : 's'}`, briefBy: (m) => `Written by ${m}, using only Qloo results`, briefAuto: 'Summary of the Qloo results below',
     tools: { read_taste: 'Read your taste', find_places: 'Find places', find_barrio: 'Map your barrio', name_barrios: 'Name the barrios', listen_city: 'Listen to the city' },
@@ -88,7 +88,7 @@ const DICT = {
     calls: (n) => `${n} llamada${n === 1 ? '' : 's'} a Qloo`, openMap: 'Abrir en mapas', filterOn: (t) => `Filtrando por “${t}”`, clear: 'Quitar',
     ics: 'Agregar al calendario (.ics)', print: 'Imprimir / guardar PDF', tagHint: 'Tip: toca un concepto para filtrar tus lugares.',
     noMatches: 'Ningún lugar tiene ese concepto — quita el filtro.',
-    h_brief: 'Tu resumen de aterrizaje', viaYou: 'Porque te gusta', both: 'Calza con tus favoritos y con tus conceptos',
+    h_brief: 'Tu resumen de aterrizaje', viaYou: 'Porque te gusta', both: 'Calza con tus favoritos y con tus conceptos', spotTag: 'Lugar de todos los días',
     agentLog: 'Decisiones del agente', plannerPolicy: 'Planificador integrado', plannerLlm: (m) => `Planificador con modelo de lenguaje · ${m}`,
     stepsN: (n) => `${n} paso${n === 1 ? '' : 's'}`, briefBy: (m) => `Escrito por ${m}, solo con resultados de Qloo`, briefAuto: 'Resumen de los resultados de Qloo de abajo',
     tools: { read_taste: 'Leer tu gusto', find_places: 'Buscar lugares', find_barrio: 'Mapear tu barrio', name_barrios: 'Nombrar los barrios', listen_city: 'Escuchar la ciudad' },
@@ -380,6 +380,7 @@ function card(item, { showWhy = true, maps = false } = {}) {
       showWhy && item.why?.length ? h('div', { class: 'because' }, `${t('because')} `, h('b', {}, item.why.slice(0, 2).join(' · '))) : null,
       showWhy && !item.why?.length && item.via?.length ? h('div', { class: 'because' }, `${t('viaYou')} `, h('b', {}, item.via.slice(0, 2).join(' · '))) : null,
       item.from === 'both' ? h('div', { class: 'pill-both' }, `✦ ${t('both')}`) : null,
+      item.from === 'spots' ? h('div', { class: 'pill-both' }, `☕ ${t('spotTag')}`) : null,
       maps ? h('a', { class: 'maplink', href: mapsUrl(item), target: '_blank', rel: 'noopener noreferrer' }, `${t('openMap')} ↗`) : null));
 }
 function grid(container, items, opts) {
