@@ -5,7 +5,7 @@ const DICT = {
   en: {
     eyebrow: 'For anyone starting over in a new city',
     title: 'Move cities.<br><em>Keep your taste.</em>',
-    lede: "Tell us what you love at home. An agent powered by Qloo's cultural graph translates it into the places, barrios, sounds and people of your new city — so day one already feels like yours.",
+    lede: "Tell us what you love at home. An agent powered by Qloo's cultural graph translates it into the places, neighborhoods, sounds and people of your new city — so day one already feels like yours.",
     s1: 'Your taste passport', s1hint: 'Add 3–8 things you love: a band, a café, a film, a brand, a book…',
     t_all: 'Everything', t_artist: 'Music', t_place: 'Places', t_movie: 'Film', t_tv: 'Series', t_book: 'Books', t_podcast: 'Podcasts', t_brand: 'Brands',
     ph_search: 'Search anything you love…', example: 'No idea where to start? Try an example',
