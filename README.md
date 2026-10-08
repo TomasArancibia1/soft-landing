@@ -2,7 +2,7 @@
 
 **Move cities. Keep your taste.**
 
-Soft Landing is an agent that translates what a person loves — a band, a café, a film, a brand, a book — into the barrio, places, culture and people of a city they have never lived in. It has no catalog of its own: every suggestion comes from [Qloo](https://qloo.com)'s Taste AI, and the page shows exactly which Qloo calls the agent made and why.
+Soft Landing is an agent that translates what a person loves — a band, a café, a film, a brand, a book — into the neighborhood, places, culture and people of a city they have never lived in. It has no catalog of its own: every suggestion comes from [Qloo](https://qloo.com)'s Taste AI, and the page shows exactly which Qloo calls the agent made and why.
 
 Live demo: **https://soft-landing-0fja.onrender.com** (free hosting — the first visit can take up to a minute to wake the server)
 
@@ -15,7 +15,7 @@ About 304 million people live outside the country they were born in ([UN DESA, m
 ## What it does
 
 - **Taste DNA** — the concepts that tie your favorites together (Qloo `entity_tags`). Tags that describe who a person is (ethnicity, religion, nationality, gender, age...) are filtered out: Soft Landing translates what you like, it does not infer who you are.
-- **Your barrio** — a heatmap of where in the city people who love your favorites concentrate, merged across your anchors and clustered into named neighborhoods (Qloo `where_popular`).
+- **Your neighborhood** — a heatmap of where in the city people who love your favorites concentrate, merged across your anchors and clustered into named neighborhoods (Qloo `where_popular`).
 - **Places** — restaurants, bars and venues that match you, found in two passes: from your favorites *and* from your concepts, so you also see places your favorites don't point to directly (Qloo `recommend`).
 - **Local culture** — what people in your new city who share your taste listen to, watch and read (Qloo `recommend` with `signal_location`).
 - **Meet someone** — add a host's or a new friend's favorites to see where your tastes overlap and a place you would both enjoy (Qloo `compare_audiences` + `recommend`).
@@ -32,10 +32,10 @@ observe → decide → act (Qloo workflow) → observe → … → self-check �
 ```
 
 1. **Read your taste** (`entity_tags`) — find the concepts behind your favorites.
-2. **Find places** and **map your barrio** in parallel.
+2. **Find places** and **map your neighborhood** in parallel.
 3. **Adapt.** If most places are landmarks or memorials, the agent runs an everyday-spots pass (cafés, bars, restaurants, bookstores). If few places matched your favorites, the agent widens the search with your concepts; if it found plenty, it runs the concept pass anyway to diversify. If the heatmap is sparse it pulls in more of your favorites.
 4. **Choose what to explore** — it asks the city about the kinds of culture you actually love (music always; film, series, books, podcasts or brands depending on your favorites).
-5. **Name the barrios**, **self-check** coverage, and write the brief.
+5. **Name the neighborhoods**, **self-check** coverage, and write the brief.
 
 The UI streams every decision, its reason and what came back (“Agent decisions”), and the “How it works” section lists every Qloo call with its inputs and timing.
 
@@ -54,7 +54,7 @@ All data comes from Qloo's canonical workflows, executed through the official [`
 | --- | --- |
 | Autocomplete for favorites | harness `search` |
 | Taste DNA | `entity_tags` |
-| Barrio heatmap | `where_popular` (one per anchor, merged) |
+| Neighborhood heatmap | `where_popular` (one per anchor, merged) |
 | Places, pass 1 | `recommend` (target `place`, signals = your favorites, `filter_location` = city) |
 | Places, pass 2 | `recommend` (signals = your top concept tags) |
 | Places, everyday spots | `find_tags` (café, bar, restaurant, bookstore) + `recommend` with `include_tags`, run when most matches are landmarks |
@@ -105,7 +105,7 @@ test/                node:test suites (API, agent loop, fake LLM, plan, .ics)
 
 ## What was built during the submission period
 
-Soft Landing started on 3 October 2026, after the hackathon opened, and everything in this repository was written during the submission period: the Qloo access layer and harness integration, the agent loop with its two planners and guardrails, the streaming UI, the barrio heatmap, the plan and calendar export, and the tests.
+Soft Landing started on 3 October 2026, after the hackathon opened, and everything in this repository was written during the submission period: the Qloo access layer and harness integration, the agent loop with its two planners and guardrails, the streaming UI, the neighborhood heatmap, the plan and calendar export, and the tests.
 
 ## License
 
