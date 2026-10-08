@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import http from 'node:http';
 import { once } from 'node:events';
-import { runAgent, policy, landmarkShare, newState } from '../lib/agent-loop.js';
+import { runAgent, policy, landmarkShare, newState, mergePlaces } from '../lib/agent-loop.js';
 import { pickConceptTags, tagCategory, shapeTags } from '../lib/agent.js';
 import { server } from '../server.js';
 
@@ -147,4 +147,14 @@ test('taste DNA drops identity-like and off-topic tags and puts taste-defining c
     { id: 'urn:tag:emotional_tone:qloo:self_expression', name: 'Self-expression' }
   ];
   assert.deepEqual(shapeTags(tags).map((t) => t.name), ['Self-expression', 'Dancing', 'Heartwarming']);
+});
+
+test('landmarks move below everyday spots once the spots pass has run', () => {
+  const st = newState(anchors, 'Berlin');
+  st.anchorPlaces = [{ id: 'm1', name: 'Memorial to Someone', affinity: 0.9 }, { id: 'a2', name: 'Bar Luna', affinity: 0.5 }];
+  st.spotPlaces = [{ id: 's1', name: 'Cafe Anna', affinity: 0.2 }];
+  mergePlaces(st);
+  const names = st.places.map((p) => p.name);
+  assert.ok(names.indexOf('Memorial to Someone') > names.indexOf('Cafe Anna'));
+  assert.ok(names.indexOf('Memorial to Someone') > names.indexOf('Bar Luna'));
 });
