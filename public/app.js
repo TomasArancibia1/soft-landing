@@ -18,7 +18,7 @@ const DICT = {
     h_meet: 'Meet someone', p_meet: "A host, a new colleague, a date. Add their taste and find where you overlap — and a place you'd both enjoy.",
     ph_other: 'Something they love…', match: 'Find common ground',
     h_plan: 'Your first 30 days', p_plan: 'A gentle plan built only from Qloo results — each line shows why it was picked for you.',
-    h_trace: 'How the agent used Qloo', p_trace: "Every call below was made through Qloo's official harness. Nothing on this page is invented.",
+    h_trace: 'How the agent used Qloo', p_trace: "The agent chooses each step from what Qloo returned. Every call below was made through Qloo's official harness; nothing on this page is invented.",
     foot: 'Built for the Qloo Agentic Hackathon. Open source (MIT).',
     k_artist: 'Sounds', k_screen: 'Film', k_series: 'Series', k_book: 'Books', k_podcast: 'Podcasts', k_brand: 'Brands',
     landingIn: 'Landing in', eyebrowOut: 'Your taste, translated',
@@ -38,7 +38,18 @@ const DICT = {
     agent: 'The agent is working', a_dna: 'Reading your taste', a_places: 'Choosing places', a_barrio: 'Finding your barrio', a_culture: 'Listening to the city', a_plan: 'Writing your plan',
     calls: (n) => `${n} Qloo call${n === 1 ? '' : 's'}`, openMap: 'Open in maps', filterOn: (t) => `Filtering by “${t}”`, clear: 'Clear',
     ics: 'Add to calendar (.ics)', print: 'Print / save as PDF', tagHint: 'Tip: tap a concept to filter your places.',
-    noMatches: 'No places carry that concept — clear the filter.'
+    noMatches: 'No places carry that concept — clear the filter.',
+    h_brief: 'Your landing brief', viaYou: 'Because you love', both: 'Matches your favorites and your concepts',
+    agentLog: 'Agent decisions', plannerPolicy: 'Built-in planner', plannerLlm: (m) => `Language-model planner · ${m}`,
+    stepsN: (n) => `${n} step${n === 1 ? '' : 's'}`, briefBy: (m) => `Written by ${m}, using only Qloo results`, briefAuto: 'Summary of the Qloo results below',
+    tools: { read_taste: 'Read your taste', find_places: 'Find places', find_barrio: 'Map your barrio', name_barrios: 'Name the barrios', listen_city: 'Listen to the city' },
+    tpl: ({ city, tags, barrio, places, sound, show }) => [
+      `In ${city}, your taste will feel at home: ${tags}.`,
+      barrio && `Start around ${barrio} — it is where people who love what you love concentrate.`,
+      places && `Good first stops: ${places}.`,
+      sound && `For your ears: ${sound}${show ? `; on screen, ${show}` : ''}.`
+    ].filter(Boolean).join(' '),
+    runFailed: 'The agent could not finish this run.'
   },
   es: {
     eyebrow: 'Para quien empieza de nuevo en otra ciudad',
@@ -56,7 +67,7 @@ const DICT = {
     h_meet: 'Conocer a alguien', p_meet: 'Un anfitrión, un colega nuevo, una cita. Agrega sus gustos y descubre dónde coinciden — y un lugar que ambos disfrutarían.',
     ph_other: 'Algo que le guste…', match: 'Buscar puntos en común',
     h_plan: 'Tus primeros 30 días', p_plan: 'Un plan suave hecho solo con resultados de Qloo — cada línea dice por qué te la elegimos.',
-    h_trace: 'Cómo usó Qloo el agente', p_trace: 'Cada llamada de abajo se hizo con el harness oficial de Qloo. Nada en esta página está inventado.',
+    h_trace: 'Cómo usó Qloo el agente', p_trace: 'El agente elige cada paso según lo que Qloo devuelve. Cada llamada de abajo se hizo con el harness oficial de Qloo; nada en esta página está inventado.',
     foot: 'Hecho para el Qloo Agentic Hackathon. Código abierto (MIT).',
     k_artist: 'Música', k_screen: 'Cine', k_series: 'Series', k_book: 'Libros', k_podcast: 'Podcasts', k_brand: 'Marcas',
     landingIn: 'Aterrizando en', eyebrowOut: 'Tu gusto, traducido',
@@ -76,7 +87,18 @@ const DICT = {
     agent: 'El agente está trabajando', a_dna: 'Leyendo tu gusto', a_places: 'Eligiendo lugares', a_barrio: 'Buscando tu barrio', a_culture: 'Escuchando la ciudad', a_plan: 'Escribiendo tu plan',
     calls: (n) => `${n} llamada${n === 1 ? '' : 's'} a Qloo`, openMap: 'Abrir en mapas', filterOn: (t) => `Filtrando por “${t}”`, clear: 'Quitar',
     ics: 'Agregar al calendario (.ics)', print: 'Imprimir / guardar PDF', tagHint: 'Tip: toca un concepto para filtrar tus lugares.',
-    noMatches: 'Ningún lugar tiene ese concepto — quita el filtro.'
+    noMatches: 'Ningún lugar tiene ese concepto — quita el filtro.',
+    h_brief: 'Tu resumen de aterrizaje', viaYou: 'Porque te gusta', both: 'Calza con tus favoritos y con tus conceptos',
+    agentLog: 'Decisiones del agente', plannerPolicy: 'Planificador integrado', plannerLlm: (m) => `Planificador con modelo de lenguaje · ${m}`,
+    stepsN: (n) => `${n} paso${n === 1 ? '' : 's'}`, briefBy: (m) => `Escrito por ${m}, solo con resultados de Qloo`, briefAuto: 'Resumen de los resultados de Qloo de abajo',
+    tools: { read_taste: 'Leer tu gusto', find_places: 'Buscar lugares', find_barrio: 'Mapear tu barrio', name_barrios: 'Nombrar los barrios', listen_city: 'Escuchar la ciudad' },
+    tpl: ({ city, tags, barrio, places, sound, show }) => [
+      `En ${city}, tu gusto se va a sentir en casa: ${tags}.`,
+      barrio && `Parte por ${barrio}: ahí se concentra la gente que ama lo que tú amas.`,
+      places && `Buenos primeros panoramas: ${places}.`,
+      sound && `Para tus oídos: ${sound}${show ? `; en pantalla, ${show}` : ''}.`
+    ].filter(Boolean).join(' '),
+    runFailed: 'El agente no pudo terminar esta ejecución.'
   }
 };
 
@@ -142,7 +164,7 @@ function applyLang() {
 }
 
 /* --------------------------------------------------------------- state ---- */
-const state = { anchors: [], other: [], city: '', trace: [], data: {}, kind: 'artist', map: null, layer: null, steps: {}, tag: null, t0: 0 };
+const state = { anchors: [], other: [], city: '', trace: [], data: {}, kind: 'artist', map: null, layer: null, steps: {}, tag: null, t0: 0, agent: null, brief: null };
 const MAX_ANCHORS = 8;
 
 const CITIES = ['Barcelona', 'Berlin', 'Lisbon', 'Madrid', 'Mexico City', 'Buenos Aires', 'Santiago', 'Bogotá', 'Lima', 'São Paulo', 'New York', 'Los Angeles', 'Toronto', 'London', 'Amsterdam', 'Paris', 'Milan', 'Rome', 'Copenhagen', 'Stockholm', 'Vienna', 'Prague', 'Warsaw', 'Istanbul', 'Dubai', 'Singapore', 'Tokyo', 'Seoul', 'Sydney', 'Melbourne', 'Medellín', 'Montevideo', 'Panama City', 'Miami', 'Chicago', 'Austin', 'Vancouver', 'Dublin', 'Edinburgh', 'Cape Town'];
@@ -298,22 +320,32 @@ function summarize(input) {
 function skeleton(container, n = 6) {
   container.replaceChildren(...Array.from({ length: n }, () => h('div', { class: 'skel' })));
 }
-const STEP_KEYS = ['dna', 'places', 'barrio', 'culture', 'plan'];
-function setStep(key, status) {
-  if (!STEP_KEYS.includes(key)) return;
-  if (state.steps[key] === 'done' && status !== 'done') return;
-  state.steps[key] = status;
-  renderAgent();
-}
+function setStep() { /* the agent panel is driven by the event stream */ }
+const toolLabel = (tool, args) => `${t('tools')[tool] || tool}${args?.kind ? ` · ${t(`k_${args.kind}`)}` : ''}${args?.mode === 'concepts' ? ' · ' + (lang === 'es' ? 'conceptos' : 'concepts') : ''}`;
 function renderAgent() {
   const box = $('#agent');
   if (!box) return;
-  const done = STEP_KEYS.every((k) => state.steps[k] === 'done');
-  const secs = state.t0 ? ((performance.now() - state.t0) / 1000).toFixed(1) : '0.0';
-  box.classList.toggle('finished', done);
-  box.replaceChildren(
-    h('div', { class: 'agent-title' }, done ? `✓ ${t('calls', state.trace.length)} · ${secs}s` : t('agent')),
-    h('ol', {}, STEP_KEYS.map((k) => h('li', { class: state.steps[k] || 'idle' }, h('i', { 'aria-hidden': 'true' }), t(`a_${k}`)))));
+  const a = state.agent;
+  if (!a) return box.replaceChildren();
+  const secs = ((a.ms ?? (state.t0 ? performance.now() - state.t0 : 0)) / 1000).toFixed(1);
+  box.classList.toggle('finished', !!a.done);
+  const planner = a.planner === 'llm' ? t('plannerLlm', a.model || 'LLM') : t('plannerPolicy');
+  const running = a.steps.filter((s) => s.status === 'run').at(-1) || a.steps.at(-1);
+  box.replaceChildren(...[
+    h('div', { class: 'agent-top' },
+      h('div', { class: 'agent-title' }, a.done ? `✓ ${t('calls', a.calls ?? state.trace.length)} · ${t('stepsN', a.steps.length)} · ${secs}s` : t('agent')),
+      h('span', { class: 'agent-planner' }, planner)),
+    h('ol', {}, a.steps.map((s) => h('li', { class: s.status === 'run' ? 'run' : s.ok === false ? 'err' : 'done' }, h('i', { 'aria-hidden': 'true' }), toolLabel(s.tool, s.args)))),
+    !a.done && running?.why ? h('p', { class: 'agent-why' }, running.why) : null,
+    a.verify ? h('p', { class: 'agent-why' }, a.verify) : null,
+    a.steps.length ? h('details', { class: 'agent-log' },
+      h('summary', {}, t('agentLog')),
+      ...a.steps.map((s) => h('div', { class: 'log-row' },
+        h('b', {}, `${s.id}. ${toolLabel(s.tool, s.args)}`),
+        s.why && h('div', { class: 'log-why' }, s.why),
+        s.summary && h('div', { class: `log-obs${s.ok === false ? ' bad' : ''}` }, `→ ${s.summary}${s.ms ? ` (${s.ms} ms)` : ''}`))),
+      ...a.notes.map((n) => h('div', { class: 'log-row' }, h('div', { class: 'log-why' }, n)))) : null
+  ].filter(Boolean));
 }
 
 async function lane(name, body, container, render, { cols } = {}) {
@@ -346,6 +378,8 @@ function card(item, { showWhy = true, maps = false } = {}) {
       (item.address || item.description) && h('div', { class: 'item-sub' }, item.address || item.description),
       m != null && h('div', { class: 'meter-row' }, h('div', { class: 'meter', style: `--m:${m / 100}` }, h('i')), `${m}% ${t('affinity')}`),
       showWhy && item.why?.length ? h('div', { class: 'because' }, `${t('because')} `, h('b', {}, item.why.slice(0, 2).join(' · '))) : null,
+      showWhy && !item.why?.length && item.via?.length ? h('div', { class: 'because' }, `${t('viaYou')} `, h('b', {}, item.via.slice(0, 2).join(' · '))) : null,
+      item.from === 'both' ? h('div', { class: 'pill-both' }, `✦ ${t('both')}`) : null,
       maps ? h('a', { class: 'maplink', href: mapsUrl(item), target: '_blank', rel: 'noopener noreferrer' }, `${t('openMap')} ↗`) : null));
 }
 function grid(container, items, opts) {
@@ -426,8 +460,32 @@ function renderBarrio(data) {
   }
   box.replaceChildren(...data.barrios.map((b, i) => h('div', { class: 'barrio', tabindex: '0', onclick: () => state.map?.flyTo([b.lat, b.lon], 14) },
     h('div', { class: 'rank' }, t('barrioN', i + 1)),
-    h('h4', {}, b.name || t('unnamed')),
+    h('h4', { class: 'bname' }, b.name || t('unnamed')),
     h('div', { class: 'meter-row' }, h('div', { class: 'meter', style: `--m:${clamp01(b.strength)}` }, h('i')), `${b.cells} ${t('cells')}`))));
+}
+
+// Neighborhood names: the server tries first; any it could not resolve are looked up
+// here (OpenStreetMap Nominatim, 1 request/second, only barrio coordinates are sent).
+let namingJob = 0;
+async function nameBarrios(data) {
+  const job = ++namingJob;
+  for (let i = 0; i < data.barrios.length; i += 1) {
+    const b = data.barrios[i];
+    if (b.name || job !== namingJob) continue;
+    try {
+      const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=14&accept-language=${lang}&lat=${b.lat.toFixed(5)}&lon=${b.lon.toFixed(5)}`;
+      const res = await fetch(url, { referrerPolicy: 'strict-origin-when-cross-origin' });
+      if (res.ok) {
+        const a = (await res.json()).address || {};
+        b.name = a.neighbourhood || a.suburb || a.quarter || a.city_district || a.village || a.town || a.city || null;
+        const el = $$('#barrios .bname')[i];
+        if (b.name && el) el.textContent = b.name;
+      }
+    } catch { /* leave the generic label */ }
+    await new Promise((r) => setTimeout(r, 1100));
+  }
+  schedulePlan();
+  renderBrief();
 }
 
 function renderKinds() {
@@ -459,8 +517,27 @@ function renderMeet(data) {
   out.replaceChildren(...nodes);
 }
 
+function renderBrief() {
+  const box = $('#brief');
+  if (!box) return;
+  const d = state.data;
+  const tags = (d.dna?.tags || []).slice(0, 4).map((x) => x.name);
+  if (!tags.length) { box.hidden = true; return; }
+  const ai = state.brief && state.brief.lang === lang ? state.brief : null;
+  const text = ai ? ai.text : t('tpl', {
+    city: state.city,
+    tags: tags.join(', '),
+    barrio: d.barrio?.barrios?.find((b) => b.name)?.name,
+    places: (d.places?.items || []).slice(0, 3).map((x) => x.name).join(', '),
+    sound: (d['culture:artist']?.items || []).slice(0, 2).map((x) => x.name).join(', '),
+    show: (d['culture:screen']?.items || d['culture:series']?.items || []).slice(0, 1).map((x) => x.name).join(', ')
+  });
+  box.hidden = false;
+  box.replaceChildren(h('h3', {}, t('h_brief')), h('p', { class: 'brief-text' }, text), h('p', { class: 'brief-by' }, ai ? t('briefBy', ai.model || 'LLM') : t('briefAuto')));
+}
+
 let planTimer;
-function schedulePlan() { clearTimeout(planTimer); planTimer = setTimeout(renderPlan, 150); }
+function schedulePlan() { clearTimeout(planTimer); planTimer = setTimeout(() => { renderPlan(); renderBrief(); }, 150); }
 function renderPlan() {
   const d = state.data;
   const culture = {};
@@ -481,6 +558,72 @@ function renderPlan() {
 }
 
 /* ------------------------------------------------------------- run ------- */
+function applyLane(name, data) {
+  record(data.trace, name);
+  if (name === 'culture') {
+    state.data[`culture:${data.kind}`] = data;
+    if (state.kind === data.kind) grid($('#culture'), data.items);
+  } else {
+    state.data[name] = data;
+    if (name === 'dna') renderDna(data);
+    else if (name === 'places') renderPlaces();
+    else if (name === 'barrio') { renderBarrio(data); nameBarrios(data); }
+  }
+  schedulePlan();
+}
+
+function onAgentEvent(ev) {
+  const a = state.agent;
+  if (ev.t === 'start') { state.agent = { planner: ev.planner, model: ev.model, steps: [], notes: [], done: false }; }
+  else if (ev.t === 'step') a.steps.push({ id: ev.id, tool: ev.tool, args: ev.args, why: ev.why, status: 'run' });
+  else if (ev.t === 'obs') { const s = a.steps.find((x) => x.id === ev.id); if (s) Object.assign(s, { status: 'done', ok: ev.ok, summary: ev.summary, ms: ev.ms }); }
+  else if (ev.t === 'lane') applyLane(ev.name, ev.data);
+  else if (ev.t === 'lane_error') {
+    const container = { dna: $('#dna'), places: $('#places'), barrio: $('#barrios'), culture: $('#culture') }[ev.name];
+    if (container && !(ev.name === 'culture' && ev.kind && ev.kind !== state.kind)) {
+      container.replaceChildren(h('div', { class: 'lane-error' }, h('span', {}, ev.message), h('button', { class: 'chip-btn', type: 'button', onclick: () => retryLane(ev) }, t('retry'))));
+    }
+  }
+  else if (ev.t === 'note') a.notes.push(ev.text);
+  else if (ev.t === 'verify') a.verify = ev.text;
+  else if (ev.t === 'brief') { state.brief = { text: ev.text, lang: ev.lang, model: ev.model }; renderBrief(); }
+  else if (ev.t === 'done') Object.assign(a, { done: true, calls: ev.calls, ms: performance.now() - state.t0, planner: ev.planner });
+  else if (ev.t === 'error') { a.done = true; a.verify = ev.message || t('runFailed'); }
+  renderAgent();
+}
+
+function retryLane(ev) {
+  const map = { dna: ['dna', $('#dna'), renderDna, 1], places: ['places', $('#places'), renderPlaces, 6], barrio: ['barrio', $('#barrios'), (d) => { renderBarrio(d); nameBarrios(d); }, 3], culture: ['culture', $('#culture'), (d) => grid($('#culture'), d.items), 4] };
+  const [name, box, render, cols] = map[ev.name];
+  return lane(name, ev.kind ? { kind: ev.kind } : {}, box, render, { cols });
+}
+
+async function streamAgent() {
+  const res = await fetch('/api/agent', {
+    method: 'POST', headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ anchors: state.anchors.map(({ id, name, type }) => ({ id, name, type })), city: state.city, lang })
+  });
+  if (!res.ok || !res.body) {
+    let msg = t('error');
+    try { msg = (await res.json()).error || msg; } catch { /* ignore */ }
+    throw new Error(msg);
+  }
+  const reader = res.body.getReader();
+  const dec = new TextDecoder();
+  let buf = '';
+  for (;;) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    buf += dec.decode(value, { stream: true });
+    let i;
+    while ((i = buf.indexOf('\n')) >= 0) {
+      const line = buf.slice(0, i).trim();
+      buf = buf.slice(i + 1);
+      if (line) { try { onAgentEvent(JSON.parse(line)); } catch { /* skip a malformed line */ } }
+    }
+  }
+}
+
 async function land() {
   state.city = $('#city').value.trim();
   state.trace = [];
@@ -488,29 +631,33 @@ async function land() {
   state.kind = 'artist';
   state.steps = {};
   state.tag = null;
+  state.agent = null;
+  state.brief = null;
   state.t0 = performance.now();
   renderAgent();
   $('#intake').hidden = true;
   $('#out').hidden = false;
+  $('#brief').hidden = true;
   window.scrollTo({ top: 0 });
   $('#out-eyebrow').textContent = t('eyebrowOut');
   $('#out-title').textContent = `${t('landingIn')} ${state.city}`;
   history.replaceState(null, '', `#${encodeState()}`);
   renderKinds();
   skeleton($('#dna'), 1);
+  skeleton($('#places'), 6);
+  skeleton($('#barrios'), 3);
+  skeleton($('#culture'), 4);
   $('#plan').replaceChildren(h('div', { class: 'skel' }));
   $('#meet').replaceChildren();
-
-  // Core lanes in parallel; the server queues them against the shared quota.
-  await Promise.all([
-    lane('dna', {}, $('#dna'), renderDna, { cols: 1 }),
-    lane('places', {}, $('#places'), renderPlaces, { cols: 6 }),
-    lane('barrio', {}, $('#barrios'), renderBarrio, { cols: 3 })
-  ]);
-  await loadCulture('artist');
-  // quietly warm the lanes the plan uses
-  for (const k of ['screen', 'book']) {
-    if (!state.data[`culture:${k}`]) lane('culture', { kind: k }, h('div'), () => {}, { cols: false });
+  try {
+    await streamAgent();
+  } catch (e) {
+    state.agent = state.agent || { planner: 'policy', steps: [], notes: [] };
+    Object.assign(state.agent, { done: true, verify: e.message || t('runFailed') });
+    renderAgent();
+    for (const id of ['#dna', '#places', '#barrios', '#culture']) {
+      if ($(id).querySelector('.skel')) $(id).replaceChildren(h('div', { class: 'lane-error' }, h('span', {}, e.message || t('error')), h('button', { class: 'chip-btn', type: 'button', onclick: land }, t('retry'))));
+    }
   }
 }
 
@@ -556,6 +703,7 @@ $('#lang').addEventListener('click', () => {
   applyLang();
   renderPersonas();
   renderAgent();
+  renderBrief();
   if (!$('#out').hidden) { $('#out-eyebrow').textContent = t('eyebrowOut'); $('#out-title').textContent = `${t('landingIn')} ${state.city}`; renderKinds(); renderPlan(); }
 });
 
