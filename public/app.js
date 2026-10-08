@@ -468,6 +468,26 @@ function renderBarrio(data) {
 // Neighborhood names: the server tries first; any it could not resolve are looked up
 // here (OpenStreetMap Nominatim, 1 request/second, only barrio coordinates are sent).
 let namingJob = 0;
+// Two clusters can sit in the same named district: tell them apart by where they are inside it.
+function disambiguateBarrios(data) {
+  const dirs = lang === 'es' ? { n: 'norte', s: 'sur', e: 'este', w: 'oeste' } : { n: 'north', s: 'south', e: 'east', w: 'west' };
+  const groups = new Map();
+  data.barrios.forEach((b, i) => { if (b.name) groups.set(b.name, [...(groups.get(b.name) || []), i]); });
+  for (const [name, idx] of groups) {
+    if (idx.length < 2) continue;
+    const lat = idx.reduce((s, i) => s + data.barrios[i].lat, 0) / idx.length;
+    const lon = idx.reduce((s, i) => s + data.barrios[i].lon, 0) / idx.length;
+    idx.forEach((i) => {
+      const b = data.barrios[i];
+      const dLat = b.lat - lat;
+      const dLon = (b.lon - lon) * Math.cos((lat * Math.PI) / 180);
+      const dir = Math.abs(dLat) >= Math.abs(dLon) ? (dLat >= 0 ? dirs.n : dirs.s) : (dLon >= 0 ? dirs.e : dirs.w);
+      b.name = `${name} · ${dir}`;
+      const el = $$('#barrios .bname')[i];
+      if (el) el.textContent = b.name;
+    });
+  }
+}
 async function nameBarrios(data) {
   const job = ++namingJob;
   for (let i = 0; i < data.barrios.length; i += 1) {
@@ -485,6 +505,7 @@ async function nameBarrios(data) {
     } catch { /* leave the generic label */ }
     await new Promise((r) => setTimeout(r, 1100));
   }
+  disambiguateBarrios(data);
   schedulePlan();
   renderBrief();
 }
