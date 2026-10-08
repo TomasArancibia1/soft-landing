@@ -2,7 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import http from 'node:http';
 import { once } from 'node:events';
-import { runAgent } from '../lib/agent-loop.js';
+import { runAgent, policy, landmarkShare, newState } from '../lib/agent-loop.js';
+import { pickConceptTags, tagCategory } from '../lib/agent.js';
 import { server } from '../server.js';
 
 const anchors = [
@@ -106,4 +107,31 @@ test('/api/agent streams newline-delimited JSON events', async (t) => {
   assert.equal(lines.at(-1).t, 'done');
   const bad = await fetch(`http://127.0.0.1:${server.address().port}/api/agent`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ anchors: [], city: 'X' }) });
   assert.equal(bad.status, 400);
+});
+
+test('landmarkShare and the policy trigger an everyday-spots pass when results are mostly landmarks', () => {
+  const st = newState(anchors, 'Berlin');
+  st.done = new Set(['taste', 'places:anchors', 'places:concepts', 'barrio']);
+  st.tags = [{ id: 'urn:tag:hobby:qloo:dancing', name: 'Dancing' }];
+  st.places = [{ name: 'Memorial to the Murdered Jews' }, { name: 'Brandenburg Gate' }, { name: 'Neues Museum' }, { name: 'Cafe Anna' }];
+  assert.ok(landmarkShare(st.places) >= 0.4);
+  const steps = policy(st, 'en');
+  assert.equal(steps[0].tool, 'find_places');
+  assert.equal(steps[0].args.mode, 'spots');
+  assert.ok(steps[0].why.length > 20);
+  st.places = [{ name: 'Cafe Anna' }, { name: 'Bar Luna' }];
+  assert.equal(landmarkShare(st.places), 0);
+  assert.notEqual(policy(st, 'en')[0].args?.mode, 'spots');
+});
+
+test('concept picking prefers place-friendly tags and ignores tags without ids', () => {
+  const tags = [
+    { id: 'urn:tag:genre:qloo:cartoon', name: 'Cartoon' },
+    { name: 'No id' },
+    { id: 'urn:tag:hobby:qloo:dancing', name: 'Dancing' },
+    { id: 'urn:tag:amenity:qloo:wifi', name: 'Wifi' }
+  ];
+  const picked = pickConceptTags(tags, 2).map((t) => t.name);
+  assert.deepEqual(picked, ['Dancing', 'Wifi']);
+  assert.equal(tagCategory('urn:tag:ethnicity:qloo:x'), 'ethnicity');
 });
