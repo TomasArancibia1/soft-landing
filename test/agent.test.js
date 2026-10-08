@@ -158,3 +158,14 @@ test('landmarks move below everyday spots once the spots pass has run', () => {
   assert.ok(names.indexOf('Memorial to Someone') > names.indexOf('Cafe Anna'));
   assert.ok(names.indexOf('Memorial to Someone') > names.indexOf('Bar Luna'));
 });
+
+test('taste DNA removes near-duplicate concepts and varies categories at the top', () => {
+  const tags = [
+    { id: 'urn:tag:emotional_tone:qloo:women_empowerment', name: 'Women Empowerment' },
+    { id: 'urn:tag:emotional_tone:qloo:empowerment', name: 'Empowerment' },
+    { id: 'urn:tag:emotional_tone:qloo:motivation', name: 'Motivation' },
+    { id: 'urn:tag:hobby:qloo:dancing', name: 'Dancing' },
+    { id: 'urn:tag:amenity:qloo:spa', name: 'SPA' }
+  ];
+  assert.deepEqual(shapeTags(tags).map((t) => t.name), ['Women Empowerment', 'Dancing', 'SPA', 'Motivation']);
+});
