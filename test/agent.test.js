@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import http from 'node:http';
 import { once } from 'node:events';
 import { runAgent, policy, landmarkShare, newState } from '../lib/agent-loop.js';
-import { pickConceptTags, tagCategory } from '../lib/agent.js';
+import { pickConceptTags, tagCategory, shapeTags } from '../lib/agent.js';
 import { server } from '../server.js';
 
 const anchors = [
@@ -134,4 +134,17 @@ test('concept picking prefers place-friendly tags and ignores tags without ids',
   const picked = pickConceptTags(tags, 2).map((t) => t.name);
   assert.deepEqual(picked, ['Dancing', 'Wifi']);
   assert.equal(tagCategory('urn:tag:ethnicity:qloo:x'), 'ethnicity');
+});
+
+test('taste DNA drops identity-like and off-topic tags and puts taste-defining concepts first', () => {
+  const tags = [
+    { id: 'urn:tag:language:qloo:spanish', name: 'Spanish' },
+    { id: 'urn:tag:occupation:qloo:magician', name: 'Magician' },
+    { id: 'urn:tag:ethnicity:qloo:x', name: 'X' },
+    { id: 'urn:tag:inclusivity:place:identifies_as_women_owned', name: 'Women-owned' },
+    { id: 'urn:tag:subgenre:qloo:heartwarming', name: 'Heartwarming' },
+    { id: 'urn:tag:hobby:qloo:dancing', name: 'Dancing' },
+    { id: 'urn:tag:emotional_tone:qloo:self_expression', name: 'Self-expression' }
+  ];
+  assert.deepEqual(shapeTags(tags).map((t) => t.name), ['Self-expression', 'Dancing', 'Heartwarming']);
 });
