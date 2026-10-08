@@ -11,9 +11,9 @@ const DICT = {
     ph_search: 'Search anything you love…', example: 'No idea where to start? Try an example',
     s2: 'Where are you landing?', ph_city: 'e.g. Berlin, Lisbon, Mexico City…', go: 'Land softly',
     share: 'Copy link', restart: 'Start over',
-    n_dna: 'Taste DNA', n_barrio: 'Your barrio', n_places: 'Places', n_culture: 'Local culture', n_meet: 'Meet someone', n_plan: '30-day plan', n_trace: 'How it works',
+    n_dna: 'Taste DNA', n_barrio: 'Your neighborhood', n_places: 'Places', n_culture: 'Local culture', n_meet: 'Meet someone', n_plan: '30-day plan', n_trace: 'How it works',
     h_dna: 'Your taste DNA', p_dna: 'The concepts Qloo finds running through everything you love.',
-    h_barrio: 'Your barrio', h_places: 'Places that feel like you', p_places: 'Restaurants, bars and venues in your new city that match your taste.',
+    h_barrio: 'Your neighborhood', h_places: 'Places that feel like you', p_places: 'Restaurants, bars and venues in your new city that match your taste.',
     h_culture: "Local culture you'll fall for", p_culture: 'What people in your new city who share your taste are into.',
     h_meet: 'Meet someone', p_meet: "A host, a new colleague, a date. Add their taste and find where you overlap — and a place you'd both enjoy.",
     ph_other: 'Something they love…', match: 'Find common ground',
@@ -26,23 +26,23 @@ const DICT = {
     needThree: 'Add at least 2 things you love and a city.', error: 'Something went wrong.', retry: 'Retry',
     empty: 'Qloo has no strong match here yet.', loading: 'Asking Qloo…',
     affinity: 'match', because: 'Because', yourTaste: 'your taste',
-    barrioN: (n) => `Barrio ${n}`, unnamed: 'Taste hotspot', cells: 'hot cells',
+    barrioN: (n) => `Neighborhood ${n}`, unnamed: 'Taste hotspot', cells: 'hot cells',
     overlap: 'Where you overlap', apart: 'Where you differ', together: "A place you'd both enjoy",
     copied: 'Link copied', copyFail: 'Copy this link from the address bar',
     weeks: ['Orient yourself', 'Find your sound', 'Screen & pages', 'Meet people'],
-    kinds: { barrio: 'Barrio', place: 'Place', artist: 'Listen', podcast: 'Listen', movie: 'Watch', tv_show: 'Watch', book: 'Read', meet: 'Meet', screen: 'Watch' },
+    kinds: { barrio: 'Neighborhood', place: 'Place', artist: 'Listen', podcast: 'Listen', movie: 'Watch', tv_show: 'Watch', book: 'Read', meet: 'Meet', screen: 'Watch' },
     youAndThem: 'You & them', theirTaste: 'Their taste', noOverlap: 'No clear overlap yet — add more of their favorites.',
     qloo: 'Qloo', cached: 'cached',
     personas: 'Or start from a persona', p1: 'Slow-morning indie', p2: 'Night owl & neon', p3: 'Foodie & festivals',
     warming: 'Waking the server up (free hosting) — the first visit can take up to a minute…',
-    agent: 'The agent is working', a_dna: 'Reading your taste', a_places: 'Choosing places', a_barrio: 'Finding your barrio', a_culture: 'Listening to the city', a_plan: 'Writing your plan',
+    agent: 'The agent is working', a_dna: 'Reading your taste', a_places: 'Choosing places', a_barrio: 'Finding your neighborhood', a_culture: 'Listening to the city', a_plan: 'Writing your plan',
     calls: (n) => `${n} Qloo call${n === 1 ? '' : 's'}`, openMap: 'Open in maps', filterOn: (t) => `Filtering by “${t}”`, clear: 'Clear',
     ics: 'Add to calendar (.ics)', print: 'Print / save as PDF', tagHint: 'Tip: tap a concept to filter your places.',
     noMatches: 'No places carry that concept — clear the filter.',
     h_brief: 'Your landing brief', viaYou: 'Because you love', both: 'Matches your favorites and your concepts', spotTag: 'Everyday spot',
     agentLog: 'Agent decisions', plannerPolicy: 'Built-in planner', plannerLlm: (m) => `Language-model planner · ${m}`,
     stepsN: (n) => `${n} step${n === 1 ? '' : 's'}`, briefBy: (m) => `Written by ${m}, using only Qloo results`, briefAuto: 'Summary of the Qloo results below',
-    tools: { read_taste: 'Read your taste', find_places: 'Find places', find_barrio: 'Map your barrio', name_barrios: 'Name the barrios', listen_city: 'Listen to the city' },
+    tools: { read_taste: 'Read your taste', find_places: 'Find places', find_barrio: 'Map your neighborhood', name_barrios: 'Name the neighborhoods', listen_city: 'Listen to the city' },
     tpl: ({ city, tags, barrio, places, sound, show }) => [
       `In ${city}, your taste will feel at home: ${tags}.`,
       barrio && `Start around ${barrio} — it is where people who love what you love concentrate.`,
@@ -558,6 +558,7 @@ function renderBrief() {
   box.replaceChildren(h('h3', {}, t('h_brief')), h('p', { class: 'brief-text' }, text), h('p', { class: 'brief-by' }, ai ? t('briefBy', ai.model || 'LLM') : t('briefAuto')));
 }
 
+const clipText = (s, n) => { s = String(s); if (s.length <= n) return s; const cut = s.slice(0, n); return `${cut.slice(0, Math.max(cut.lastIndexOf(' '), n - 20))}…`; };
 let planTimer;
 function schedulePlan() { clearTimeout(planTimer); planTimer = setTimeout(() => { renderPlan(); renderBrief(); }, 150); }
 function renderPlan() {
@@ -575,7 +576,7 @@ function renderPlan() {
     ...w.items.map((it) => h('div', { class: 'step-item' },
       h('div', { class: 'k' }, t('kinds')[it.type] || it.type),
       h('div', { class: 't' }, it.title),
-      it.note && h('div', { class: 'n' }, String(it.note).slice(0, 110)),
+      it.note && h('div', { class: 'n' }, clipText(it.note, 110)),
       it.why && h('div', { class: 'because' }, `${t('because')} `, h('b', {}, it.why.value)))))));
 }
 
