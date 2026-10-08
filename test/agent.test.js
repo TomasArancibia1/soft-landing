@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import http from 'node:http';
 import { once } from 'node:events';
 import { runAgent, policy, landmarkShare, newState, mergePlaces } from '../lib/agent-loop.js';
-import { pickConceptTags, tagCategory, shapeTags } from '../lib/agent.js';
+import { pickConceptTags, tagCategory, shapeTags, shapeOverlap } from '../lib/agent.js';
 import { server } from '../server.js';
 
 const anchors = [
@@ -168,4 +168,14 @@ test('taste DNA removes near-duplicate concepts and varies categories at the top
     { id: 'urn:tag:amenity:qloo:spa', name: 'SPA' }
   ];
   assert.deepEqual(shapeTags(tags).map((t) => t.name), ['Women Empowerment', 'Dancing', 'SPA', 'Motivation']);
+});
+
+test('overlap concepts drop repeats and place-only tags', () => {
+  const tags = [
+    { name: 'United States', type: 'country' },
+    { name: 'Funk' }, { name: 'funk' },
+    { id: 'urn:tag:location:qloo:new_york', name: 'New York City' },
+    { id: 'urn:tag:genre:qloo:disco', name: 'Disco' }
+  ];
+  assert.deepEqual(shapeOverlap(tags).map((t) => t.name), ['Funk', 'Disco']);
 });
