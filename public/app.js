@@ -543,7 +543,7 @@ function renderBrief() {
   const box = $('#brief');
   if (!box) return;
   const d = state.data;
-  const tags = (d.dna?.tags || []).slice(0, 4).map((x) => x.name);
+  const tags = (d.dna?.tags || []).slice(0, 3).map((x) => x.name);
   if (!tags.length) { box.hidden = true; return; }
   const ai = state.brief && state.brief.lang === lang ? state.brief : null;
   const text = ai ? ai.text : t('tpl', {
