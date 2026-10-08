@@ -185,3 +185,9 @@ test('everydayFirst pushes landmarks behind everyday places', async () => {
   const out = everydayFirst([{ name: 'Memorial to X' }, { name: 'Cafe A' }, { name: 'Bar B' }]);
   assert.deepEqual(out.map((i) => i.name), ['Cafe A', 'Bar B', 'Memorial to X']);
 });
+
+test('everydayFirst drops landmarks when there are enough everyday places', async () => {
+  const { everydayFirst } = await import('../lib/agent.js');
+  const out = everydayFirst([{ name: 'Memorial to X' }, { name: 'A' }, { name: 'B' }, { name: 'C' }, { name: 'D' }]);
+  assert.deepEqual(out.map((i) => i.name), ['A', 'B', 'C', 'D']);
+});
