@@ -1,0 +1,109 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import http from 'node:http';
+import { once } from 'node:events';
+import { runAgent } from '../lib/agent-loop.js';
+import { server } from '../server.js';
+
+const anchors = [
+  { id: 'a1', name: 'Gepe', type: 'artist' },
+  { id: 'a2', name: 'Roma', type: 'movie' },
+  { id: 'a3', name: 'Aesop', type: 'brand' }
+];
+
+async function collect(opts) {
+  const events = [];
+  const state = await runAgent({ anchors, city: 'Berlin', lang: 'en', emit: (e) => events.push(e), ...opts });
+  return { events, state };
+}
+
+test('policy planner completes every core lane and verifies itself', async () => {
+  const { events } = await collect();
+  const lanes = new Set(events.filter((e) => e.t === 'lane').map((e) => e.name));
+  for (const l of ['dna', 'places', 'barrio', 'culture']) assert.ok(lanes.has(l), l);
+  assert.equal(events[0].planner, 'policy');
+  assert.equal(events.at(-1).t, 'done');
+  assert.ok(events.some((e) => e.t === 'verify' && e.checks.places > 0));
+  // every step has a reason and gets an observation
+  const steps = events.filter((e) => e.t === 'step');
+  assert.ok(steps.length >= 5 && steps.every((s) => s.why));
+  for (const s of steps) assert.ok(events.some((e) => e.t === 'obs' && e.id === s.id), `obs for step ${s.id}`);
+});
+
+test('the agent runs a second pass from concepts and merges places', async () => {
+  const { events, state } = await collect();
+  assert.ok(events.some((e) => e.t === 'step' && e.tool === 'find_places' && e.args.mode === 'concepts'));
+  assert.ok(state.places.some((p) => p.from === 'concepts' || p.from === 'both'));
+  assert.ok(new Set(state.places.map((p) => p.id)).size === state.places.length, 'places deduplicated');
+});
+
+test('culture kinds follow what the person loves', async () => {
+  const { state } = await collect();
+  assert.ok(state.culture.artist && state.culture.screen && state.culture.brand);
+  assert.ok(!state.culture.book);
+});
+
+test('an LLM planner chooses the tools; guardrails, validation and brief still apply', async (t) => {
+  const seen = [];
+  const fake = http.createServer(async (req, res) => {
+    const chunks = [];
+    for await (const c of req) chunks.push(c);
+    const body = JSON.parse(Buffer.concat(chunks).toString());
+    seen.push(body);
+    const tool = (name, args) => ({ id: `c_${seen.length}_${name}`, type: 'function', function: { name, arguments: JSON.stringify(args) } });
+    const turn = seen.filter((b) => b.tools).length;
+    let message;
+    if (!body.tools) message = { role: 'assistant', content: 'Welcome to Berlin. Start with the barrio and Gepe.' };
+    else if (turn === 1) message = { role: 'assistant', content: '', tool_calls: [tool('read_taste', { reason: 'start' })] };
+    else if (turn === 2) message = { role: 'assistant', content: '', tool_calls: [tool('find_places', { mode: 'anchors', reason: 'places' }), tool('delete_everything', { reason: 'x' }), tool('find_barrio', { reason: 'map' })] };
+    else message = { role: 'assistant', content: 'done' }; // stops early: guardrails must fill culture
+    res.writeHead(200, { 'content-type': 'application/json' });
+    res.end(JSON.stringify({ choices: [{ message }] }));
+  });
+  fake.listen(0);
+  await once(fake, 'listening');
+  process.env.LLM_API_KEY = 'test-key';
+  process.env.LLM_BASE_URL = `http://127.0.0.1:${fake.address().port}`;
+  t.after(() => { delete process.env.LLM_API_KEY; delete process.env.LLM_BASE_URL; fake.close(); });
+
+  const { events } = await collect();
+  assert.equal(events[0].planner, 'llm');
+  const tools = events.filter((e) => e.t === 'step').map((s) => s.tool);
+  assert.ok(!tools.includes('delete_everything'), 'unknown tool rejected');
+  assert.ok(tools.includes('read_taste') && tools.includes('find_barrio'));
+  assert.ok(events.some((e) => e.t === 'note' && /Guardrail/.test(e.text)), 'guardrail completed skipped core');
+  assert.ok(events.some((e) => e.t === 'lane' && e.name === 'culture'));
+  const brief = events.find((e) => e.t === 'brief');
+  assert.match(brief.text, /Welcome to Berlin/);
+  // the key was sent as a bearer token only to the configured endpoint, never to the client
+  assert.ok(!JSON.stringify(events).includes('test-key'));
+});
+
+test('an LLM outage falls back to the built-in policy', async (t) => {
+  const dead = http.createServer((req, res) => { res.writeHead(500); res.end('nope'); });
+  dead.listen(0);
+  await once(dead, 'listening');
+  process.env.LLM_API_KEY = 'k';
+  process.env.LLM_BASE_URL = `http://127.0.0.1:${dead.address().port}`;
+  t.after(() => { delete process.env.LLM_API_KEY; delete process.env.LLM_BASE_URL; dead.close(); });
+  const { events } = await collect();
+  assert.ok(events.some((e) => e.t === 'note'));
+  assert.equal(events.at(-1).planner, 'policy');
+  assert.ok(events.some((e) => e.t === 'lane' && e.name === 'places'));
+});
+
+test('/api/agent streams newline-delimited JSON events', async (t) => {
+  server.listen(0);
+  await once(server, 'listening');
+  t.after(() => server.close());
+  const res = await fetch(`http://127.0.0.1:${server.address().port}/api/agent`, {
+    method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ anchors, city: 'Berlin', lang: 'en' })
+  });
+  assert.equal(res.status, 200);
+  assert.match(res.headers.get('content-type'), /ndjson/);
+  const lines = (await res.text()).trim().split('\n').map((l) => JSON.parse(l));
+  assert.equal(lines[0].t, 'start');
+  assert.equal(lines.at(-1).t, 'done');
+  const bad = await fetch(`http://127.0.0.1:${server.address().port}/api/agent`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ anchors: [], city: 'X' }) });
+  assert.equal(bad.status, 400);
+});
