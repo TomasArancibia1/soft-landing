@@ -34,7 +34,7 @@ const hits = new Map();
 function rateLimited(ip) {
   const now = Date.now();
   const windowMs = 60_000;
-  const limit = Number(process.env.RATE_LIMIT_PER_MIN || 40);
+  const limit = Number(process.env.RATE_LIMIT_PER_MIN || 90);
   const list = (hits.get(ip) || []).filter((t) => now - t < windowMs);
   list.push(now);
   hits.set(ip, list);
