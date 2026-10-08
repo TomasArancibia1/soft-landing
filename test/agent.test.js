@@ -179,3 +179,9 @@ test('overlap concepts drop repeats and place-only tags', () => {
   ];
   assert.deepEqual(shapeOverlap(tags).map((t) => t.name), ['Funk', 'Disco']);
 });
+
+test('everydayFirst pushes landmarks behind everyday places', async () => {
+  const { everydayFirst } = await import('../lib/agent.js');
+  const out = everydayFirst([{ name: 'Memorial to X' }, { name: 'Cafe A' }, { name: 'Bar B' }]);
+  assert.deepEqual(out.map((i) => i.name), ['Cafe A', 'Bar B', 'Memorial to X']);
+});
