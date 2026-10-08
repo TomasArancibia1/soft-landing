@@ -14,7 +14,7 @@ About 304 million people live outside the country they were born in ([UN DESA, m
 
 ## What it does
 
-- **Taste DNA** — the concepts that tie your favorites together (Qloo `entity_tags`).
+- **Taste DNA** — the concepts that tie your favorites together (Qloo `entity_tags`). Tags that describe who a person is (ethnicity, religion, nationality, gender, age...) are filtered out: Soft Landing translates what you like, it does not infer who you are.
 - **Your barrio** — a heatmap of where in the city people who love your favorites concentrate, merged across your anchors and clustered into named neighborhoods (Qloo `where_popular`).
 - **Places** — restaurants, bars and venues that match you, found in two passes: from your favorites *and* from your concepts, so you also see places your favorites don't point to directly (Qloo `recommend`).
 - **Local culture** — what people in your new city who share your taste listen to, watch and read (Qloo `recommend` with `signal_location`).
@@ -33,7 +33,7 @@ observe → decide → act (Qloo workflow) → observe → … → self-check �
 
 1. **Read your taste** (`entity_tags`) — find the concepts behind your favorites.
 2. **Find places** and **map your barrio** in parallel.
-3. **Adapt.** If few places matched your favorites, the agent widens the search with your concepts; if it found plenty, it runs the concept pass anyway to diversify. If the heatmap is sparse it pulls in more of your favorites.
+3. **Adapt.** If most places are landmarks or memorials, the agent runs an everyday-spots pass (cafés, bars, restaurants, bookstores). If few places matched your favorites, the agent widens the search with your concepts; if it found plenty, it runs the concept pass anyway to diversify. If the heatmap is sparse it pulls in more of your favorites.
 4. **Choose what to explore** — it asks the city about the kinds of culture you actually love (music always; film, series, books, podcasts or brands depending on your favorites).
 5. **Name the barrios**, **self-check** coverage, and write the brief.
 
@@ -57,6 +57,7 @@ All data comes from Qloo's canonical workflows, executed through the official [`
 | Barrio heatmap | `where_popular` (one per anchor, merged) |
 | Places, pass 1 | `recommend` (target `place`, signals = your favorites, `filter_location` = city) |
 | Places, pass 2 | `recommend` (signals = your top concept tags) |
+| Places, everyday spots | `find_tags` (café, bar, restaurant, bookstore) + `recommend` with `include_tags`, run when most matches are landmarks |
 | Local culture | `recommend` (target = artist / movie / tv_show / book / podcast / brand, `signal_location` = city) |
 | Meet someone | `compare_audiences` + `recommend` |
 
