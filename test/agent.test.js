@@ -191,6 +191,7 @@ test('everydayFirst drops landmarks when there are enough everyday places', asyn
   const out = everydayFirst([{ name: 'Memorial to X' }, { name: 'A' }, { name: 'B' }, { name: 'C' }, { name: 'D' }]);
   assert.deepEqual(out.map((i) => i.name), ['A', 'B', 'C', 'D']);
 });
+
 test('weak tag categories and padded names never reach the DNA', () => {
   const tags = [
     { id: 'urn:tag:art_style:qloo:cartoon', name: 'Cartoon' },
@@ -209,4 +210,3 @@ test('global chains rank below independent places', () => {
   const names = st.places.map((p) => p.name);
   assert.ok(names.indexOf('Hard Rock Cafe Tokyo') > names.indexOf('Bar Luna'));
 });
-
