@@ -5,6 +5,9 @@ import { fileURLToPath } from 'node:url';
 import { qlooSearch, budgetStatus, isMock, QlooError } from './lib/qloo.js';
 import * as agent from './lib/agent.js';
 import * as N from './lib/normalize.js';
+import { runAgent } from './lib/agent-loop.js';
+import { llmEnabled, llmLabel } from './lib/llm.js';
+import { warmPersonas } from './lib/warm.js';
 
 if (process.env.QLOO_MOCK === '1' && process.env.NODE_ENV === 'production') {
   console.error('Refusing to start: QLOO_MOCK=1 is not allowed in production.');
@@ -48,7 +51,7 @@ const SECURITY_HEADERS = {
     "style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com",
     "font-src 'self' https://fonts.gstatic.com",
     "img-src 'self' data: https:",
-    "connect-src 'self'",
+    "connect-src 'self' https://nominatim.openstreetmap.org",
     "frame-ancestors 'none'"
   ].join('; ')
 };
@@ -111,7 +114,29 @@ async function handleApi(req, res, url) {
   const path = url.pathname;
 
   if (path === '/api/health') {
-    return send(res, 200, { ok: true, mock: isMock, budget: budgetStatus() });
+    return send(res, 200, { ok: true, mock: isMock, planner: llmEnabled() ? 'llm' : 'policy', model: llmLabel(), budget: budgetStatus() });
+  }
+
+  if (path === '/api/agent' && req.method === 'POST') {
+    const body = await readBody(req);
+    const anchors = parseAnchors(body.anchors);
+    const city = parseCity(body.city);
+    const lang = body.lang === 'es' ? 'es' : 'en';
+    const ctrl = new AbortController();
+    res.on('close', () => ctrl.abort());
+    res.writeHead(200, {
+      ...SECURITY_HEADERS,
+      'Content-Type': 'application/x-ndjson; charset=utf-8',
+      'Cache-Control': 'no-store',
+      'X-Accel-Buffering': 'no'
+    });
+    const emit = (event) => { if (!res.writableEnded && !ctrl.signal.aborted) res.write(`${JSON.stringify(event)}\n`); };
+    try {
+      await runAgent({ anchors, city, lang, signal: ctrl.signal, emit });
+    } catch (error) {
+      emit({ t: 'error', message: error instanceof QlooError ? error.message : 'Something went wrong.', code: error?.code });
+    }
+    return res.end();
   }
 
   if (path === '/api/search' && req.method === 'GET') {
@@ -193,5 +218,8 @@ export const server = http.createServer(async (req, res) => {
 });
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1])) {
-  server.listen(PORT, () => console.log(`Soft Landing listening on :${PORT}${isMock ? ' (MOCK data — development only)' : ''}`));
+  server.listen(PORT, () => {
+    console.log(`Soft Landing listening on :${PORT}${isMock ? ' (MOCK data — development only)' : ''}`);
+    if (process.env.WARM_PERSONAS !== '0' && !isMock) setTimeout(() => warmPersonas().catch(() => {}), 8000).unref();
+  });
 }
